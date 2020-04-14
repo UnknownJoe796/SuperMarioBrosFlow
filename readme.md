@@ -4,7 +4,7 @@ This is a mod of the original Super Mario Bros. for the NES which removes all le
 
 This repository does not and will never include the base game.  Go buy the real game from Nintendo.  I'm not interested in supporting piracy - they do great work and deserve your dollars.
 
-![GIF](video.mp4)
+![Video](video.gif)
 
 ## Playing
 

@@ -26,10 +26,10 @@ ScoreReplacementModeLives = 2
 ScoreReplacementMode = ScoreReplacementModeLives
 
 
-DifficultyMode = 1; 0 = super-easy, 1 = easy, 2 = normal
+DifficultyMode = 0; 0 = super-easy, 1 = easy, 2 = normal
 SpeedMode = 1; 0 = normal, 1 = fast
 CheatsEnabled = 1
-BonusFeatures = 1; 0 = normal game, 1 = new moves
+BonusFeatures = 1; 0 = normal game, 1 = new moves (down stomp, fast swim, enemy bounce)
 FancyNewBackground = 1; 0 = no special background, 1 = new background colors
 WackyMode = 0
 FixLivesCounter = 1
@@ -137,7 +137,7 @@ JumpNextLevelFlagReloadPalette = $07Cf
 DebugByteA = $07C8
 DebugByteB = $07C9
 DebugByteC = $07Cb
-DebugByteD = $07Cc
+SuppressJumpNoise = $07Cc
 
 BackgroundCurrent = $076e
 BackgroundGoal = $076d
@@ -2680,13 +2680,12 @@ Palette3_MTiles:
 
 ;Black background blink hack involves removal of background color writing
 WaterPaletteData:
-  .db $3f, $01, $0F
-  .db      $15, $12, $25
-  .db $0f, $3a, $1a, $0f
+  .db $3f, $00, $20 ;Header - determines start of PPU address, states there will be $20 (32) bytes written there
+  .db $0f, $15, $12, $25 ;background, one, two, three
+  .db $0f, $3a, $1a, $0f ;<ignored background>, one, two, three
   .db $0f, $30, $12, $0f
   .db $0f, $27, $12, $0f
-  .db $3f, $15, $0B
-  .db      $16, $27, $18
+  .db $22, $16, $27, $18
   .db $0f, $10, $30, $27
   .db $0f, $16, $30, $27
   .db $0f, $0f, $30, $10
@@ -6387,6 +6386,9 @@ PlayerHole: lda Player_Y_HighPos        ;check player's vertical high byte
             bne HoleDie                 ;if set, branch
             ldy CloudTypeOverride       ;check for cloud type override
             bne ChkHoleX                ;skip to last part if found
+            lda AreaPointer
+            cmp #$29
+            beq PipeAdvanceAreaNumber
 HoleDie:    inx                         ;set flag in X for player death
             ldy GameEngineSubroutine
             cpy #$0b                    ;check for some other routine running
@@ -6399,18 +6401,14 @@ HoleDie:    inx                         ;set flag in X for player death
 HoleBottom: ldy #$06
             sty $07                     ;change value here
 ChkHoleX:   
+            
+            dex                         ;otherwise decrement flag in X
+            bmi CloudExit               ;if flag was clear, branch to set modes and other values
 
             .if UseFastDeath <= 0
                   cmp $07                     ;compare vertical high byte with value set here
                   bmi ExitCtrl                ;if less, branch to leave
             .endif
-            
-            dex                         ;otherwise decrement flag in X
-            bmi CloudExit               ;if flag was clear, branch to set modes and other values
-
-            lda AreaPointer
-            cmp #$29
-            beq PipeAdvanceAreaNumber
 
             .if UseFastDeath <= 0
                   ldy EventMusicBuffer        ;check to see if music is still playing
@@ -6419,6 +6417,11 @@ ChkHoleX:
             lda #$06                    ;otherwise set to run lose life routine
             sta GameEngineSubroutine    ;on next frame
 ExitCtrl:   rts                         ;leave
+
+PipeAdvanceAreaNumber:
+      inc AreaNumber            ;increment area number used for address loader
+      jsr LoadAreaPointer       ;get new level pointer
+      inc FetchNewGameTimerFlag 
 
 CloudExit:
       lda #$00
@@ -6490,13 +6493,6 @@ ChgAreaMode: inc DisableScreenFlag     ;set flag to disable screen output
             lda AreaPointer
             cmp #$29
             bne ExitCAPipe
-            PipeAdvanceAreaNumber:
-                  lda #$00
-                  sta AltEntranceControl
-                  inc DisableIntermediate
-                  inc AreaNumber            ;increment area number used for address loader
-                  jsr LoadAreaPointer       ;get new level pointer
-                  inc FetchNewGameTimerFlag 
                   
             ;asdfasdf
 
@@ -6843,7 +6839,9 @@ ProcJumping:
            bne InitJS
            lda Player_Y_Speed         ;check player's vertical speed
            bpl InitJS                 ;if player's vertical speed motionless or down, branch
-           jmp X_Physics              ;if timer at zero and player still rising, do not swim
+           jsr InitJS
+           jmp X_Physics
+
 InitJS:    lda #$20                   ;set jump/swim timer
            sta JumpSwimTimer
            ldy #$00                   ;initialize vertical force and dummy variable
@@ -6884,21 +6882,27 @@ GetYPhy:   lda JumpMForceData,y       ;store appropriate jump/swim
            sta Player_Y_MoveForce
            lda PlayerYSpdData,y
            sta Player_Y_Speed
+           lda SuppressJumpNoise
+           bne JumpSubEnd
            lda SwimmingFlag           ;if swimming flag disabled, branch
            beq PJumpSnd
            lda #Sfx_EnemyStomp        ;load swim/goomba stomp sound into
            sta Square1SoundQueue      ;square 1's sfx queue
            lda Player_Y_Position
            cmp #$14                   ;check vertical low byte of player position
-           bcs X_Physics              ;if below a certain point, branch
+           bcs JumpSubEnd              ;if below a certain point, branch
            lda #$00                   ;otherwise reset player's vertical speed
            sta Player_Y_Speed         ;and jump to something else to keep player
-           jmp X_Physics              ;from swimming above water level
+           jmp JumpSubEnd              ;from swimming above water level
 PJumpSnd:  lda #Sfx_BigJump           ;load big mario's jump sound by default
            ldy PlayerSize             ;is mario big?
            beq SJumpSnd
            lda #Sfx_SmallJump         ;if not, load small mario's jump sound
 SJumpSnd:  sta Square1SoundQueue      ;store appropriate jump sound in square 1 sfx queue
+JumpSubEnd:
+      lda #$00
+      sta SuppressJumpNoise
+      rts
 X_Physics: ldy #$00
            sty $00                    ;init value here
            lda Player_State           ;if mario is on the ground, branch
@@ -12272,9 +12276,7 @@ EnemyStompedPts:
       sta Enemy_State,x          ;set d5 in enemy state
       jsr InitVStf               ;nullify vertical speed, physics-related thing,
       sta Enemy_X_Speed,x        ;and horizontal speed
-      lda #$fd                   ;set player's vertical speed, to give bounce
-      sta Player_Y_Speed
-      rts
+      jmp SBnce
 
 ChkForDemoteKoopa:
       cmp #$09                   ;branch elsewhere if enemy object < $09
@@ -12306,9 +12308,23 @@ HandleStompedShellE:
        ldy PrimaryHardMode        ;check primary hard mode flag
        lda RevivalRateData,y      ;load timer setting according to flag
        sta EnemyIntervalTimer,x   ;set as enemy timer to revive stomped enemy
+
+.if BonusFeatures == 0
 SBnce: lda #$fc                   ;set player's vertical speed for bounce
        sta Player_Y_Speed         ;and then leave!!!
        rts
+.else
+SBnce: 
+      lda A_B_Buttons
+      and #A_Button
+      beq SBnceSmall
+      inc SuppressJumpNoise
+      jmp InitJS
+SBnceSmall:
+      lda #$fc                   ;set player's vertical speed for bounce
+       sta Player_Y_Speed         ;and then leave!!!
+       rts
+.endif
 
 ChkEnemyFaceRight:
        lda Enemy_MovingDir,x ;check to see if enemy is moving to the right

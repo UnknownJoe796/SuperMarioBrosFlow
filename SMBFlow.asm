@@ -3407,6 +3407,7 @@ SetPESub: lda #$07                    ;set to run player entrance subroutine
 
 ;page numbers are in order from -1 to -4
 
+
 HalfwayPageNybbles:
       .db $50, $64, $00, $00
       .db $60, $57, $00, $00
@@ -6492,9 +6493,7 @@ ChgAreaMode: inc DisableScreenFlag     ;set flag to disable screen output
 
             lda AreaPointer
             cmp #$29
-            bne ExitCAPipe
-                  
-            ;asdfasdf
+            beq PipeAdvanceAreaNumber
 
 ExitCAPipe:  rts                       ;leave
 

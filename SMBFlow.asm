@@ -29,12 +29,12 @@ ScoreReplacementMode = ScoreReplacementModeLives
 DifficultyMode = 1; 0 = super-easy, 1 = easy, 2 = normal
 SpeedMode = 1; 0 = normal, 1 = fast
 CheatsEnabled = 1
-BonusFeatures = 0; 0 = normal game, 1 = new moves
-FancyNewBackground = 0; 0 = no special background, 1 = new background colors
+BonusFeatures = 1; 0 = normal game, 1 = new moves
+FancyNewBackground = 1; 0 = no special background, 1 = new background colors
 WackyMode = 0
 FixLivesCounter = 1
 
-;Guarentee that the lives counter is in 'fixed' mode under this circumstance
+;Guarantee that the lives counter is in 'fixed' mode under this circumstance
 .if ScoreReplacementMode == ScoreReplacementModeLives:
       FixLivesCounter = 1
 .endif

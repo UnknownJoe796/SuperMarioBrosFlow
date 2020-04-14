@@ -2787,7 +2787,7 @@ MushroomPaletteData:
       DarkRockPaletteData:
       .db $3f, $01, $07
       .db      $17, $07, $0f ;red background objects
-      .db $0f, $00, $2d, $0f ; main brick colors - dark
+      .db $0f, $3d, $2d, $0f ; main brick colors - dark
       .db $00
 
 .endif
@@ -3408,17 +3408,15 @@ SetPESub: lda #$07                    ;set to run player entrance subroutine
 ;-------------------------------------------------------------------------------------
 
 ;page numbers are in order from -1 to -4
-
-
 HalfwayPageNybbles:
-      .db $50, $64, $00, $00
-      .db $60, $57, $00, $00
-      .db $66, $40, $00, $00
-      .db $60, $64, $00, $00
-      .db $66, $40, $00, $00
-      .db $66, $60, $00, $00
-      .db $60, $57, $00, $00
-      .db $00, $00, $00, $00
+      .db $56, $40
+      .db $65, $70
+      .db $66, $40
+      .db $66, $40
+      .db $66, $40
+      .db $66, $60
+      .db $65, $70
+      .db $00, $00
 
 PlayerLoseLife:
              inc DisableScreenFlag    ;disable screen and sprite 0 check
@@ -3441,30 +3439,23 @@ StillInGame:
             lda #$00
             jmp SetHalfway
 LookAtHalfwayPage:
-            lda WorldNumber          ;multiply world number by 4 and use
+            lda WorldNumber          ;multiply world number by 2 and use
              asl                      ;as offset
-             asl                      ;as offset
-             sta $01
-             lda AreaNumber
-             clc
-             lsr
-             clc
-             adc $01
              tax
-
-             ldy HalfwayPageNybbles,x ;get halfway page number with offset
-             lda AreaNumber          ;check area number's LSB
-             and #%00000001
-             bne MaskHPNyb
+             lda LevelNumber          ;if in area -3 or -4, increment
+             and #$02                 ;offset by one byte, otherwise
+             beq GetHalfway           ;leave offset alone
+             inx
+GetHalfway:  ldy HalfwayPageNybbles,x ;get halfway page number with offset
+             lda LevelNumber          ;check area number's LSB
+             lsr
              tya                      ;if in area -2 or -4, use lower nybble
+             bcs MaskHPNyb
              lsr                      ;move higher nybble to lower if area
              lsr                      ;number is -1 or -3
              lsr
              lsr
-             jmp MaskHPNyb2 
-MaskHPNyb:
-            tya
-MaskHPNyb2:   and #%00001111           ;mask out all but lower nybble
+MaskHPNyb:   and #%00001111           ;mask out all but lower nybble
              cmp ScreenLeft_PageLoc
              beq SetHalfway           ;left side of screen must be at the halfway page,
              bcc SetHalfway           ;otherwise player must start at the
@@ -6424,6 +6415,8 @@ ExitCtrl:   rts                         ;leave
 PipeAdvanceAreaNumber:
       inc AreaNumber            ;increment area number used for address loader
       jsr LoadAreaPointer       ;get new level pointer
+      lda #$00
+      sta EntrancePage
       inc FetchNewGameTimerFlag 
 
 CloudExit:
@@ -6487,15 +6480,16 @@ SideExitPipeEntry:
              ldy #$02
 ChgAreaPipe: dec ChangeAreaTimer       ;decrement timer for change of area
              bne ExitCAPipe
+            lda AreaPointer
+            cmp #$29
+            beq PipeAdvanceAreaNumber
              sty AltEntranceControl    ;when timer expires set mode of alternate entry
-ChgAreaMode: inc DisableScreenFlag     ;set flag to disable screen output
+ChgAreaMode: 
+            inc DisableScreenFlag     ;set flag to disable screen output
              lda #$00
              sta OperMode_Task         ;set secondary mode of operation
              sta Sprite0HitDetectFlag  ;disable sprite 0 check
 
-            lda AreaPointer
-            cmp #$29
-            beq PipeAdvanceAreaNumber
 
 ExitCAPipe:  rts                       ;leave
 

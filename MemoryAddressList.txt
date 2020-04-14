@@ -5,7 +5,7 @@
 074e AreaType
 0733 AreaStyle
 | |
-| |
+075b HalfwayPage
 06cd EnemyFrenzyQueue
 06cb EnemyFrenzyBuffer
 | |

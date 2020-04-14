@@ -26,7 +26,7 @@ ScoreReplacementModeLives = 2
 ScoreReplacementMode = ScoreReplacementModeLives
 
 
-DifficultyMode = 1; 0 = super-easy, 1 = easy, 2 = normal
+DifficultyMode = 3; 0 = super-easy, 1 = easy, 2 = extra lives, 3 = normal
 SpeedMode = 1; 0 = normal, 1 = fast
 CheatsEnabled = 1
 BonusFeatures = 1; 0 = normal game, 1 = new moves (down stomp, fast swim, enemy bounce)
@@ -57,16 +57,18 @@ UseFastBowserKill = SpeedMode
 UseSelectStartsLevelTransition = CheatsEnabled
 StartWithLevelSelect = CheatsEnabled
 
-.if DifficultyMode == 2
+.if DifficultyMode < 3 
       PlainStartLives = 3
+.else
+      PlainStartLives = 90
+.endif
+.if DifficultyMode >= 2
       StartPlayerSize = PlayerSizeSmall
       StartPlayerStatus = PlayerStatusSmall
 .elseif DifficultyMode == 1
-      PlainStartLives = 90
       StartPlayerSize = PlayerSizeLarge
       StartPlayerStatus = PlayerStatusSuper
 .else
-      PlainStartLives = 90
       StartPlayerSize = PlayerSizeLarge
       StartPlayerStatus = PlayerStatusFire
 .endif

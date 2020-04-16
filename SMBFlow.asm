@@ -23,60 +23,57 @@
 ScoreReplacementModeScore = 0
 ScoreReplacementModeTime = 1
 ScoreReplacementModeLives = 2
-ScoreReplacementMode = ScoreReplacementModeLives
 
+PlayerSizeSmall = $01
+PlayerSizeLarge = $00
+PlayerStatusFire = $02
+PlayerStatusSuper = $01
+PlayerStatusSmall = $00
 
-DifficultyMode = 3; 0 = super-easy, 1 = easy, 2 = extra lives, 3 = normal
-SpeedMode = 1; 0 = normal, 1 = fast
-CheatsEnabled = 1
-BonusFeatures = 1; 0 = normal game, 1 = new moves (down stomp, fast swim, enemy bounce)
-FancyNewBackground = 1; 0 = no special background, 1 = new background colors
-WackyMode = 0
-FixLivesCounter = 1
+.ifndef ScoreReplacementMode
+      SpeedMode = 1
+      ScoreReplacementMode = ScoreReplacementModeScore
+      FixLivesCounter = 0
+
+      StartWithLevelSelect = 1
+      UseSelectStartsLevelTransition = 0
+
+      PlainStartLives = 3
+      StartPlayerSize = PlayerSizeSmall
+      StartPlayerStatus = PlayerStatusSmall
+
+      PlayerHasFastFall = 0
+      PlayerFastSwim = 0
+      PlayerHasHighBounce = 0
+      UseStupidSpeed = 0
+
+      FancyNewBackground = 0; 0 = no special background, 1 = new background colors
+.endif
+
+.ifndef UseDownwardsLaunchOnEntrance 
+      UseDownwardsLaunchOnEntrance = SpeedMode
+.endif
+
+StartLives = PlainStartLives-1
 
 ;Guarantee that the lives counter is in 'fixed' mode under this circumstance
 .if ScoreReplacementMode == ScoreReplacementModeLives:
-      FixLivesCounter = 1
+    FixLivesCounter = 1
 .endif
 
 UseNiceCastleTransition = 1-SpeedMode
-UseDownwardsLaunchOnEntrance = SpeedMode
 UseFastDeath = SpeedMode
 UseFastInjury = SpeedMode
 UseFastBowserKill = SpeedMode
 .if SpeedMode > 0
-      .if ScoreReplacementMode == ScoreReplacementModeLives
+    .if ScoreReplacementMode == ScoreReplacementModeLives
             IntroTime = 0
-      .else
+    .else
             IntroTime = 3
-      .endif
+    .endif
 .else
-      IntroTime = 7
+    IntroTime = 7
 .endif
-
-UseSelectStartsLevelTransition = CheatsEnabled
-StartWithLevelSelect = CheatsEnabled
-
-.if DifficultyMode < 3 
-      PlainStartLives = 3
-.else
-      PlainStartLives = 90
-.endif
-.if DifficultyMode >= 2
-      StartPlayerSize = PlayerSizeSmall
-      StartPlayerStatus = PlayerStatusSmall
-.elseif DifficultyMode == 1
-      StartPlayerSize = PlayerSizeLarge
-      StartPlayerStatus = PlayerStatusSuper
-.else
-      StartPlayerSize = PlayerSizeLarge
-      StartPlayerStatus = PlayerStatusFire
-.endif
-StartLives = PlainStartLives-1
-
-PlayerHasFastFall = BonusFeatures
-PlayerFastSwim = BonusFeatures
-UseStupidSpeed = WackyMode
 
 ;;;;;;;;;;;;;;;;;;;;;;;
 ;;;   iNES HEADER   ;;;
@@ -754,12 +751,6 @@ TitleScreenModeValue  = 0
 GameModeValue         = 1
 VictoryModeValue      = 2
 GameOverModeValue     = 3
-
-PlayerSizeSmall = $01
-PlayerSizeLarge = $00
-PlayerStatusFire = $02
-PlayerStatusSuper = $01
-PlayerStatusSmall = $00
 
 .if UseStupidSpeed
       PlayerRunSpeed = $40
@@ -2074,11 +2065,12 @@ EndGameText:   lda #$00                 ;put null terminator at end
                   clc                      ;and increment by one for display
                   adc #$01
                   cmp #10                  ;more than 9 lives?
-                  beq SkipSecondLivesDigit
+                  bcc SkipSecondLivesDigit
                   sbc #10                  ;if so, subtract 10 and put a crown tile
                   ldy #$9f                 ;next to the difference...strange things happen if
                   sty VRAM_Buffer1+7       ;the number of lives exceeds 19
             SkipSecondLivesDigit:
+                  sta DebugByteA
                   sta VRAM_Buffer1+8
                .endif
                ldy WorldNumber          ;write world and level numbers (incremented for display)
@@ -12304,7 +12296,7 @@ HandleStompedShellE:
        lda RevivalRateData,y      ;load timer setting according to flag
        sta EnemyIntervalTimer,x   ;set as enemy timer to revive stomped enemy
 
-.if BonusFeatures == 0
+.if PlayerHasHighBounce == 0
 SBnce: lda #$fc                   ;set player's vertical speed for bounce
        sta Player_Y_Speed         ;and then leave!!!
        rts

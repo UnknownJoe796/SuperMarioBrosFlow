@@ -18,7 +18,7 @@ FixLivesCounter = 1
 StartWithLevelSelect = 1
 UseSelectStartsLevelTransition = 0
 
-PlainStartLives = 99
+PlainStartLives = 90
 StartPlayerSize = PlayerSizeLarge
 StartPlayerStatus = PlayerStatusSuper
 

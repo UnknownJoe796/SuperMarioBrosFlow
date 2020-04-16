@@ -12,8 +12,10 @@ Apply the IPS file to a plain Super Mario Bros ROM and you're good to go!  There
 
 ### Variants
 
+In all variants, world select is unlocked from the start.
+
 - Original - Meant for speed runners of the original game, the only changes here cut out waiting time and the level transitions.
-- Classic - Same as original with a couple of tweaks: the score counter has been replaced by a lives counter, there's no interstitial screen, and you fall faster when entering a level from the top.
+- Classic - Same as original with a couple of tweaks: the score counter has been replaced by a lives counter, there's no interstitial screen, and you fall faster when entering a level from the top.  Also, start with 90 lives.
 - Plus - The various worlds after the first have new palettes and Mario gets a couple of new moves, including:
     - High bounce from other Mario entries - Hold A when bouncing off an enemy to get a full jump.
     - Fast-fall - Press down while in the air to instantly go to vertical terminal velocity.  Does not affect horizontal speed.

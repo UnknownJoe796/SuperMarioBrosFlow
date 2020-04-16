@@ -7812,6 +7812,7 @@ GiveOneCoin:
       bne CoinPoints         ;if not, skip all of this
       lda #$00
       sta CoinTally          ;otherwise, reinitialize coin amount
+GiveExtraLife:
       inc NumberofLives      ;give the player an extra life
       lda #Sfx_ExtraLife
       sta Square2SoundQueue  ;play 1-up sound
@@ -12050,9 +12051,14 @@ Shroom_Flower_PUp:
       jmp UpToFiery       ;jump to set values accordingly
 
 SetFor1Up:
-      lda #$0b                 ;change 1000 points into 1-up instead
-      sta FloateyNum_Control,x ;and then leave
-      rts
+      .if ScoreReplacementMode == ScoreReplacementModeScore
+            lda #$0b                 ;change 1000 points into 1-up instead
+            sta FloateyNum_Control,x ;and then leave
+            rts
+      .else
+            jmp GiveExtraLife
+            ;TODO
+      .endif
 
 UpToSuper:
        lda #PlayerStatusSuper         ;set player status to super
